@@ -1,68 +1,66 @@
-require("dotenv/config");
-const WebSocket = require("ws");
-// Initialize the Discord bot client
-const Discord = require('discord.js')
-const client = new Discord.Client({
+require('dotenv/config');
+const axios = require('axios');
+const { Client, IntentsBitField } = require('discord.js');
+const { Configuration, OpenAIApi } = require('openai');
+
+const client = new Client({
   intents: [
-    Discord.Intents.FLAGS.Guilds, 
-    Discord.Intents.FLAGS.GuildMessages,
-    Discord.Intents.FLAGS.MessageContents,
+    IntentsBitField.Flags.Guilds,
+    IntentsBitField.Flags.GuildMessages,
+    IntentsBitField.Flags.MessageContent,
   ],
 });
 
-
-const ws = new WebSocket("wss://chatapi.andylyu.com/chat");
-let requestId = 0;
-let messageQueue = {};
-
-client.on("ready", () => {
-  console.log(`Logged in as ${client.user.tag}!`);
+client.on('ready', () => {
+  console.log('The bot is online!');
 });
 
-client.on("messageCreate", async (message) => {
+const configuration = new Configuration({
+  apiKey: process.env.API_KEY,
+});
+const openai = new OpenAIApi(configuration);
+
+client.on('messageCreate', async (message) => {
   if (message.author.bot) return;
+  if (message.channel.id !== process.env.CHANNEL_ID) return;
+  if (message.content.startsWith('!')) return;
 
-  const text = message.content;
-  const request = {
-    id: requestId++,
-    object: "text",
-    created: Date.now(),
-    text: text,
-    model: "gpt-3.5-turbo-0301",
-  };
-  messageQueue[request.id] = {
-    originalMessage: message,
-    chunks: [],
-  };
+  let conversationLog = [{ role: 'system', content: 'You are a friendly chatbot.' }];
 
-  ws.send(JSON.stringify(request));
-});
+  try {
+    await message.channel.sendTyping();
 
-ws.on("message", (data) => {
-  const message = JSON.parse(data);
+    let prevMessages = await message.channel.messages.fetch({ limit: 15 });
+    prevMessages.reverse();
 
-  if (message.object === "chat.completion.chunk") {
-    const choices = message.choices;
-    if (choices && choices.length > 0) {
-      const lastChoice = choices[choices.length - 1];
-      const id = message.id;
-      messageQueue[id].chunks.push(lastChoice.delta.content);
+    prevMessages.forEach((msg) => {
+      if (message.content.startsWith('!')) return;
+      if (msg.author.id !== client.user.id && message.author.bot) return;
+      if (msg.author.id !== message.author.id) return;
 
-      if (lastChoice.finish_reason === "stop") {
-        const botResponse = messageQueue[id].chunks.join("");
-        const originalMessage = messageQueue[id].originalMessage;
-        originalMessage.channel.send(botResponse);
-        delete messageQueue[id];
-      }
-    }
-  } else if (message === "[DONE]") {
-    ws.close();
+      conversationLog.push({
+        role: 'user',
+        content: msg.content,
+      });
+    });
+
+    const backendUrl = 'http://chatapi.andylyu.com/chat'; // Replace with your backend URL
+
+try {
+  const response = await axios.post(backendUrl, {
+    messages: conversationLog,
+  });
+
+  const result = response.data;
+  message.reply(result.choices[0].message);
+} catch (error) {
+  console.error(`Backend ERR: ${error.message}`);
+}
+
+    message.reply(result.data.choices[0].message);
+  } catch (error) {
+    console.log(`ERR: ${error}`);
   }
 });
 
-ws.on("close", () => {
-  console.log("WebSocket closed");
-});
-
-// Connect the bot to Discord using your bot token
 client.login(process.env.DISCORD_BOT_TOKEN);
