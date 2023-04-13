@@ -1,10 +1,13 @@
-require("dotenv").config();
-const fetch = require("node-fetch");
+require("dotenv/config");
 const WebSocket = require("ws");
 // Initialize the Discord bot client
 const Discord = require('discord.js')
 const client = new Discord.Client({
-  intents: [Discord.Intents.FLAGS.Guilds, Discord.Intents.FLAGS.GuildMessages],
+  intents: [
+    Discord.Intents.FLAGS.Guilds, 
+    Discord.Intents.FLAGS.GuildMessages,
+    Discord.Intents.FLAGS.MessageContents,
+  ],
 });
 
 
