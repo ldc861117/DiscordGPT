@@ -1,8 +1,12 @@
+require("dotenv").config();
 const fetch = require("node-fetch");
 const WebSocket = require("ws");
 // Initialize the Discord bot client
 const Discord = require('discord.js')
-const client = new Discord.Client()
+const client = new Discord.Client({
+  intents: [Discord.Intents.FLAGS.Guilds, Discord.Intents.FLAGS.GuildMessages],
+});
+
 
 const ws = new WebSocket("wss://chatapi.andylyu.com/chat");
 let requestId = 0;
@@ -58,4 +62,4 @@ ws.on("close", () => {
 });
 
 // Connect the bot to Discord using your bot token
-client.login('MTA5NTk1MzAxNDgzNTEzODYyMA.GglmMS.EMHVojF7O_gUMyS_xht42kB9XfOcz-ARffEGNg')
+client.login(process.env.DISCORD_BOT_TOKEN);
