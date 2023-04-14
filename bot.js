@@ -43,6 +43,7 @@ client.on("messageCreate", async (message) => {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
             if (data !== '[DONE]') {
+              console.log(`Backend: ${data}`);
               botReply += data;
             }
           }
