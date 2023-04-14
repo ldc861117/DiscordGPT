@@ -15,12 +15,18 @@ client.on('ready', () => {
   console.log('The bot is online!');
 });
 
-client.on('messageCreate', async (message) => {
+client.on("messageCreate", async (message) => {
+  // Create a console log for each message
+  console.log(
+    `Message received: ${message.content} from ${message.author.username}`
+  );
   if (message.author.bot) return;
   if (message.channel.id !== process.env.CHANNEL_ID) return;
-  if (message.content.startsWith('!')) return;
+  if (message.content.startsWith("!")) return;
 
-  let conversationLog = [{ role: 'system', content: 'You are a friendly chatbot.' }];
+  let conversationLog = [
+    { role: "system", content: "You are a friendly chatbot." },
+  ];
 
   try {
     await message.channel.sendTyping();
@@ -29,30 +35,36 @@ client.on('messageCreate', async (message) => {
     prevMessages.reverse();
 
     prevMessages.forEach((msg) => {
-      if (message.content.startsWith('!')) return;
+      if (message.content.startsWith("!")) return;
       if (msg.author.id !== client.user.id && message.author.bot) return;
       if (msg.author.id !== message.author.id) return;
 
       conversationLog.push({
-        role: 'user',
+        role: "user",
         content: msg.content,
       });
     });
 
-    const backendUrl = 'http://chatapi.andylyu.com/chat'; // Replace with your backend URL
+    const backendUrl = "http://chatapi.andylyu.com/chat"; // Replace with your backend URL
 
-try {
-  const response = await axios.post(backendUrl, {
-    messages: conversationLog,
-  });
+    try {
+      const response = await axios.post(backendUrl, {
+        messages: conversationLog,
+      });
 
-  const result = response.data;
-  message.reply(result.choices[0].message);
-} catch (error) {
-  console.error(`Backend ERR: ${error.message}`);
-}
+      const data = response.data;
+      let botResponse = "";
 
-    message.reply(result.data.choices[0].message);
+      data.forEach((item) => {
+        if (item.choices && item.choices[0].delta.content) {
+          botResponse += item.choices[0].delta.content;
+        }
+      });
+
+      message.reply(botResponse);
+    } catch (error) {
+      console.error(`Backend ERR: ${error.message}`);
+    }
   } catch (error) {
     console.log(`ERR: ${error}`);
   }
