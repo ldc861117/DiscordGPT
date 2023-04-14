@@ -48,6 +48,8 @@ client.on("messageCreate", async (message) => {
     const backendUrl = "http://chatapi.andylyu.com/chat"; // Replace with your backend URL
 
     try {
+      // Start axios request to backend print to console
+      console.log("Sending request to backend...");
       const response = await axios.post(backendUrl, {
         messages: conversationLog,
       });
@@ -58,6 +60,8 @@ client.on("messageCreate", async (message) => {
       data.forEach((item) => {
         if (item.choices && item.choices[0].delta.content) {
           botResponse += item.choices[0].delta.content;
+          // Print to console
+          console.log(`Bot response: ${botResponse}`);
         }
       });
 
