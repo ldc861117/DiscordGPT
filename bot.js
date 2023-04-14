@@ -1,7 +1,7 @@
 require("dotenv/config");
 const EventSource = require('eventsource');
 const axios = require("axios");
-const { Client, IntentsBitField } = require("discord.js");
+const { Client, IntentsBitField, resolveColor } = require("discord.js");
 
 const client = new Client({
   intents: [
@@ -30,43 +30,29 @@ client.on("messageCreate", async (message) => {
 
   try {
     async function fetchReply(conversationLog) {
-      const response = await axios.post('http://chatapi.andylyu.com/chat', {
-        headers: { 'Content-Type': 'application/json' },
-        data: JSON.stringify({ messages: conversationLog }),
-      });
-    
+      const response = await axios.post(
+        'http://chatapi.andylyu.com/chat',
+        JSON.stringify({ messages: conversationLog }),
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+  
       let botReply = '';
-      const stream = new ReadableStream({
-        start(controller) {
-          axios.interceptors.response.use((response) => {
-            if (typeof response.data === 'string') {
-              response.data.split('\n').forEach((line) => {
-                controller.enqueue(line);
-              });
+  
+      if (typeof response.data === 'string') {
+        response.data.split('\n').forEach((line) => {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data !== '[DONE]') {
+              botReply += data;
             }
-            return response;
-          });
-        },
-      });
-    
-      const reader = stream.getReader();
-      let result = await reader.read();
-      while (!result.done) {
-        const value = result.value;
-        if (value.startsWith('data: ')) {
-          const data = value.slice(6);
-          if (data === '[DONE]') {
-            break;
-          } else {
-            botReply += data;
           }
-        }
-        result = await reader.read();
+        });
       }
+  
       return botReply;
     }
-
-    const result = fetchReply(conversationLog);
+  
+    const result = await fetchReply(conversationLog);
     message.reply(result);
   } catch (error) {
     console.error(`Backend ERR: ${error.message}`);
