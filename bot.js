@@ -28,22 +28,14 @@ client.on("messageCreate", async (message) => {
     { role: "system", content: "You are a friendly chatbot." },
   ];
 
-  try {
-    await message.channel.sendTyping();
 
-    let prevMessages = await message.channel.messages.fetch({ limit: 15 });
-    prevMessages.reverse();
 
-    prevMessages.forEach((msg) => {
-      if (message.content.startsWith("!")) return;
-      if (msg.author.id !== client.user.id && message.author.bot) return;
-      if (msg.author.id !== message.author.id) return;
+  conversationLog.push({
+    role: "user",
+    content: msg.content,
+  });
 
-      conversationLog.push({
-        role: "user",
-        content: msg.content,
-      });
-    });
+
 
     const backendUrl = "http://chatapi.andylyu.com/chat"; // Replace with your backend URL
 
@@ -69,9 +61,7 @@ client.on("messageCreate", async (message) => {
     } catch (error) {
       console.error(`Backend ERR: ${error.message}`);
     }
-  } catch (error) {
-    console.log(`ERR: ${error}`);
-  }
 });
+
 
 client.login(process.env.DISCORD_BOT_TOKEN);
