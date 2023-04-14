@@ -26,29 +26,16 @@ client.on("messageCreate", async (message) => {
   ];
   conversationLog.push({ role: "user", content: message.content });
   await message.channel.sendTyping();
-  //const backendUrl = "http://chatapi.andylyu.com/chat";
 
   try {
     async function fetchReply(conversationLog) {
       const response = await axios.post(
-        'http://chatapi.andylyu.com/chat',
-        JSON.stringify({ messages: conversationLog }),
-        { headers: { 'Content-Type': 'application/json' } }
+        "http://chatapi.andylyu.com/chat",
+        { headers: { "Content-Type": "application/json" } },
+        { messages: conversationLog },
       );
   
-      let botReply = '';
-  
-      if (typeof response.data === 'string') {
-        response.data.split('\n').forEach((line) => {
-          if (line.startsWith('data: ')) {
-            const data = line.slice(6);
-            if (data !== '[DONE]') {
-              console.log(`Backend: ${data}`);
-              botReply += data;
-            }
-          }
-        });
-      }
+      const botReply = response.data;
   
       return botReply;
     }
