@@ -16,9 +16,9 @@ client.on("ready", () => {
 });
 
 client.on("messageCreate", async (message) => {
-  console.log(
-    `Message received: ${message.content} from ${message.author.username}`
-  );
+  
+  const username = message.author.username;
+  
   if (message.author.bot) return;
 
   let conversationLog = [
@@ -29,13 +29,20 @@ client.on("messageCreate", async (message) => {
 
   try {
     async function fetchReply(conversationLog) {
+      console.log("Fetching reply...");
       const response = await axios.post(
-        "http://chatapi.andylyu.com/chat",
-        { headers: { "Content-Type": "application/json" } },
-        { messages: conversationLog },
+        "http://chatapi.andylyu.com:12345/chat",
+        { 
+          messages: conversationLog,
+          username: username,
+          stream: false, 
+        },
+        { 
+          headers: { "Content-Type": "application/json" } 
+        },
       );
   
-      const botReply = response.data;
+      const botReply = response.data.content;
   
       return botReply;
     }
